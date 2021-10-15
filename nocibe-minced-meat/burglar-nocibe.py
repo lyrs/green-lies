@@ -26,7 +26,7 @@ with open("naturelle.htm", encoding="utf-8") as fnatural:
 with open("hrefs-nocibe.csv", "w", newline="") as hrefscsv:
     writer = csv.writer(hrefscsv)
     writer.writerow(["url","cat"])
-    writer.writerows({item, "bio"} for item in biohrefs)
-    writer.writerows({item, "clean"} for item in cleanhrefs)
-    writer.writerows({item, "natural"} for item in naturalhrefs)
+    writer.writerows([item, "bio"] for item in biohrefs)
+    writer.writerows([item, "clean"] for item in cleanhrefs)
+    writer.writerows([item, "natural"] for item in naturalhrefs)
     hrefscsv.close()
