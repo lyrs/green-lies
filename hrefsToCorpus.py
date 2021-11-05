@@ -2,6 +2,7 @@ import urllib.request
 from bs4 import BeautifulSoup
 from tinydb import TinyDB
 import csv
+from socket import timeout
 
 def item(url):
     with urllib.request.urlopen(url) as page_source:
@@ -25,6 +26,7 @@ def item(url):
 
 
 db = TinyDB('db.json')
+file = open("to.txt", "a") # Temp file if program crash to get timedout URL
 
 with open('nocibe-minced-meat/hrefs-nocibe.csv', newline='') as csvfile:
     nocibe_csv_reader = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -37,6 +39,25 @@ with open('nocibe-minced-meat/hrefs-nocibe.csv', newline='') as csvfile:
         except AttributeError:
             print("No information for this item")
             skiped = skiped +1
+        except timeout:
+            try:
+                db.insert(item(row[0]))
+            except AttributeError:
+                print("No information for this item")
+                skiped = skiped + 1
+            except timeout and urllib.error.URLError:
+                to.append(row[0])
+                file.write(row[0] + "\n")
+        except timeout and urllib.error.URLError:
+            print('Timed  out, retrying ')
+            try:
+                db.insert(item(row[0]))
+            except AttributeError:
+                print("No information for this item")
+                skiped = skiped + 1
+            except timeout and urllib.error.URLError:
+                to.append(row[0])
+                file.write(row[0] + "\n")
         print(nocibe_csv_reader.line_num)
     print("Skipped items : ",skiped)
 
