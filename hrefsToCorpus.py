@@ -28,11 +28,16 @@ db = TinyDB('db.json')
 
 with open('nocibe-minced-meat/hrefs-nocibe.csv', newline='') as csvfile:
     nocibe_csv_reader = csv.reader(csvfile, delimiter=',', quotechar='|')
-    nocibe_csv_reader.__next__()
+    nocibe_csv_reader.__next__() #Removing the headers 
+    skiped = 0
     for row in nocibe_csv_reader:
         print(row[0])
-        db.insert(item(row[0]))
+        try:
+            db.insert(item(row[0]))
+        except AttributeError:
+            print("No information for this item")
+            skiped = skiped +1
         print(nocibe_csv_reader.line_num)
-
+    print("Skipped items : ",skiped)
 
 
