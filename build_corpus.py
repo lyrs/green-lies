@@ -26,28 +26,27 @@ def load_links(cats=("bio","clean","naturelle"), dpath="product-links/"):
         print("Caching links...")
         linkset = set()
         for cat in cats:
-            # TO DO
-            # make it deterministic 
             linkset.update(set(get_links(dpath+cat+".htm")))
             print(f"Category \"{cat}\" done.")
 
+        linklist = sorted(list(linkset))
         with open("hrefs.txt", 'w', newline='\n', encoding='utf-8') as hrefs:
-            for link in tqdm(linkset):
+            for link in tqdm(linklist):
                 hrefs.write(link+'\n')
         print("Links extracted.")
     else:
         with open("hrefs.txt", 'r', encoding='utf-8') as hrefs:
-            linkset = hrefs.read().split()
+            linklist = hrefs.read().split()
 
-    return linkset
+    return linklist
 
 def scrape(source, url):
     """The exact data scraping.
-    
+
     Returns: a dict with a product attributes
     """
 
-    soup = BeautifulSoup(source, features="html.parser").find('section', id='productPage')
+    soup = BeautifulSoup(source, 'html5lib').find('section', id='productPage')
 
     entry = {}
     entry['url'] = url
@@ -55,7 +54,7 @@ def scrape(source, url):
     title = soup.find(class_='prdct__designation')
     entry['brand'] = title.find(class_='prdct__name').text
     entry['name'] = title.find(attrs={'itemprop':'name'}).text
-    
+
     try:
         entry['labels'] = [label.text.strip() for label in soup.find(
             class_="prdct__labels").find_all('li')]
@@ -67,7 +66,7 @@ def scrape(source, url):
 
     details = soup.find(class_="prdct__details-wrap")
     entry['description'] = details.find(id='description').text
-    
+
     try:
         entry['ingredients'] = details.find(id='ingredients').text
         if len(entry['ingredients']) > 36: # arbitrary number
@@ -80,9 +79,9 @@ def scrape(source, url):
         entry['is_cosmetic'] = False
 
     entry['in_stock'] = True
-    
+
     return entry
-    
+
 
 def get_item(url):
     """Retrieves data from a product page."""
@@ -112,10 +111,9 @@ def get_item(url):
         result = scrape(page.text, url)
     except AttributeError:
         print("Couldn't scrape.")
-        pass 
-        
+
     return result
-      
+
 # TO DO
 # check if it's partially build and keep scrapping from nth link
 if os.path.exists('db.json'):
