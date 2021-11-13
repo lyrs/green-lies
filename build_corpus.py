@@ -8,7 +8,6 @@ then saves it in a TinyDB for later use.
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 from tinydb import TinyDB
-from requests_html import HTML
 import requests
 import os.path
 
@@ -43,47 +42,77 @@ def load_links(cats=("bio","clean","naturelle"), dpath="product-links/"):
     return linkset
 
 def scrape(source, url):
-    """The exact data scraping."""
-    soup = source.find("section.prdct", first=True)
+    """The exact data scraping.
+    
+    Returns: a dict with a product attributes
+    """
+
+    soup = BeautifulSoup(source, features="html.parser").find('section', id='productPage')
 
     entry = {}
     entry['url'] = url
 
-    entry['brand'] = soup.find("div.prdct__name", first=True).text
-    entry['name'] = soup.find("div[itemprop=name]", first=True).text
+    title = soup.find(class_='prdct__designation')
+    entry['brand'] = title.find(class_='prdct__name').text
+    entry['name'] = title.find(attrs={'itemprop':'name'}).text
     
     try:
-      entry['labels'] = soup.find("div.prdct__labels", first=True).text.split('\n')
-    except AttributeError as e:
-      print("Labels missing!")
-      print(str(e))
-      return {}
+        entry['labels'] = [label.text.strip() for label in soup.find(
+            class_="prdct__labels").find_all('li')]
+    # is out of stock
+    except AttributeError:
+        print("Labels missing!")
+        entry['in_stock'] = False
+        return entry
 
-    entry['description'] = soup.find("div[id=description]", first=True).text
+    details = soup.find(class_="prdct__details-wrap")
+    entry['description'] = details.find(id='description').text
+    
     try:
-        entry['ingredients'] = soup.find("div[id=ingredients]", first=True).text
+        entry['ingredients'] = details.find(id='ingredients').text
+        if len(entry['ingredients']) > 36: # arbitrary number
+            entry['is_cosmetic'] = True
+        else:
+            entry['is_cosmetic'] = False
     # is not a cosmetic
     except AttributeError:
-        print("Not a cosmetic!")
         entry['ingredients'] = "None"
+        entry['is_cosmetic'] = False
 
+    entry['in_stock'] = True
+    
     return entry
     
 
 def get_item(url):
     """Retrieves data from a product page."""
     # setup
-    page = requests.get(url, headers=HEADER, timeout=60)
+    result = {"url": url}
+    try:
+        page = requests.get(url, headers=HEADER, timeout=60)
+    except requests.ConnectionError as e:
+        print("Connection Error.")
+        print(e)
+        return result
+    except requests.Timeout as e:
+        print("Timeout Error.")
+        print(e)
+        return result
+    except requests.RequestException as e:
+        print("General Error.")
+        print(e)
+        return result
+
 
     if page.status_code != 200:
-        print(f"Couldn't accces {url}")
-        return {}
+        print("Couldn't fetch the page.")
+        return result
 
     try:
-      result = scrape(HTML(html=page.text), url)
+        result = scrape(page.text, url)
     except AttributeError:
-      print("Something went wrong...?")
-      result = {} 
+        print("Couldn't scrape.")
+        pass 
         
     return result
       
@@ -95,25 +124,5 @@ if os.path.exists('db.json'):
 db = TinyDB('db.json')
 
 for link in tqdm(load_links()):
-    try:
-        item = get_item(link)
-    except requests.ConnectionError as e:
-        print()
-        print("OOPS!! Connection Error. Make sure you are connected to Internet. Technical Details given below.\n")
-        print(str(e))
-    except requests.Timeout as e:
-        print()
-        print("OOPS!! Timeout Error")
-        print(str(e))
-    except requests.RequestException as e:
-        print()
-        print("OOPS!! General Error")
-        print(str(e))
-    except KeyboardInterrupt:
-        print()
-        print("Someone closed the program")
-    
-    if item:
-        db.insert(item)
-    else:
-        db.insert({"url":link})
+    item = get_item(link)
+    db.insert(item)
