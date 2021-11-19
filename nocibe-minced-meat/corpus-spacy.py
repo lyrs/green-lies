@@ -18,22 +18,26 @@ from spacy.tokens import DocBin
 
 # --------------------------------------------------
 
-# Run python -m spacy download en_core_web_sm using the command line before reaching the next line
-pipeline = ["fr_core_news_sm"]
-# Load the spacy pipeline
-nlp = spacy.load(pipeline[0])
-# Create a doc with a specific string
-doc = nlp("Greenlies est prêt!")
-# Load data from tinydb
-db = TinyDB("db-nocibe.json")
-# Get the product details
-details = [item for item in db.all()]
-# And product descriptions within them
-description = [item["description"] for item in details]
-# Create a doc bin to store documents
-doc_bin = DocBin(attrs=["LEMMA"])
-for item in description:
-    single_doc = nlp(str(item))
-    doc_bin.add(single_doc)
-# Pour all the docs into the serialised file
-doc_bin.to_disk("./data/corpus.spacy")
+
+def export_spacy_corpus():
+    # Run python -m spacy download fr_core_web_sm using the command line before reaching the next line
+    pipeline = ["fr_core_news_sm"]
+    # Load the spacy pipeline
+    nlp = spacy.load(pipeline[0])
+    # Stop words for french
+    fr_stopwords = nlp.Defaults.stop_words
+    # Load data from tinydb
+    db = TinyDB("../db.json")
+    # Get the product details
+    details = [item for item in db.all()]
+    # And product descriptions within them
+    description = [item["description"] for item in details]
+    # Create a doc bin to store documents
+    doc_bin = DocBin(attrs=["LEMMA"])
+    for item in description:
+        single_doc = nlp(str(item))
+        doc_bin.add(single_doc)
+    # Pour all the docs into the serialised file
+    doc_bin.to_disk("data/corpus.spacy")
+
+
