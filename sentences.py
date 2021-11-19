@@ -24,9 +24,9 @@ if __name__ == '__main__':
             out = args[1]
 
     index = 0
-    outf = open(out, "w")
+    outf = open(out, "w", encoding="utf8")
     try:
-        with open(FILE) as file:
+        with open(FILE, encoding="utf8") as file:
             for line in file:
                 process_line(line, outf)
                 index += 1
