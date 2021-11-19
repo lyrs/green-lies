@@ -10,12 +10,12 @@ workingdir = "corpora/"
 nltk.download("punkt")
 
 
-def db_to_corpus():
+def db_to_corpus(db_path):
     """
     This method exports the data stored in tinydb to txt files as corpora of product descriptions!
     """
     # Read the json db
-    db = TinyDB("db-nocibe.json")
+    db = TinyDB(db_path)
     # Get all product details
     details = [item for item in db.all()]
     # And product descriptions within them
@@ -89,9 +89,9 @@ def extract_sentences(corpus):
     return results
 
 
-def extract_sentences_from_db():
+def extract_sentences_from_db(db_path):
     # Read the json db
-    db = TinyDB("../db.json")
+    db = TinyDB(db_path)
     print(len(db.all()))
     # Get all product details
     details = [item for item in db.all()]
