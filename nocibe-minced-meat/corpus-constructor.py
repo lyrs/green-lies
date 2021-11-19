@@ -2,7 +2,7 @@ import os
 from nltk.corpus.reader.plaintext import PlaintextCorpusReader
 import nltk
 from tinydb import TinyDB
-
+import re
 
 # Specify the working directory
 workingdir = "corpora/"
@@ -54,10 +54,11 @@ def sanitise_sentences(_sentences):
     """
     results = []
     for sentence in _sentences:
+        sentence = re.sub("\s*Réf : \d{6}\sR\d{13,20}", "", sentence)
         # If the sentence satisfies the condition that
         # It's not None, and it equals or is longer than the considered term "bio"
         if sentence is not False and len(sentence) >= 3:
-            results.append(sentence)
+            results.append(sentence.strip())
         else:
             # Otherwise, ignore it
             continue
@@ -88,6 +89,26 @@ def extract_sentences(corpus):
     return results
 
 
+def extract_sentences_from_db():
+    # Read the json db
+    db = TinyDB("../db.json")
+    print(len(db.all()))
+    # Get all product details
+    details = [item for item in db.all()]
+    # And product descriptions within them
+    description = [item["description"] for item in details]
+    # Check if the folder exists
+    if not os.path.isdir(workingdir):
+        # If not yet, simply create the folder
+        os.mkdir(workingdir)
+    filename = "data/sentences_for_tagging.txt"
+    sentences = []
+    for des in description:
+        sentences.extend(sanitise_sentences(des.split(".")))
 
-
+    with open(filename, "w", encoding="UTF8") as s4ttxt:
+        for sen in sentences:
+            s4ttxt.writelines(sen + "\t\n")
+        s4ttxt.close()
+    return len(sentences)
 
