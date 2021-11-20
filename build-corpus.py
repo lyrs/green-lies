@@ -8,15 +8,17 @@ then saves it in a TinyDB for later use.
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 from tinydb import TinyDB
+import re
 import requests
 import os.path
 
 HEADER = {"User-Agent":"Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:77.0) Gecko/20100101 Firefox/77.0"}
+COSML = re.compile(r"\d+\s?(m?l|g)", flags=re.IGNORECASE) # matches grammature
 
-def get_links(file):
+def get_links(filepath):
     """Get links from a webpage snapshot."""
-    with open(file, 'r', encoding='utf-8') as f:
-        soup = BeautifulSoup(f, 'html5lib')
+    with open(filepath, 'r', encoding='utf-8') as file:
+        soup = BeautifulSoup(file, 'html5lib')
     links = soup.find_all("a", {"class": "proditem__link"})
     return [link['href'] for link in links]
 
@@ -43,7 +45,7 @@ def load_links(cats=("bio","clean","naturelle"), dpath="product-links/"):
 def scrape(source, url):
     """The exact data scraping.
 
-    Returns: a dict with a product attributes
+    Returns: a dict with product attributes
     """
 
     soup = BeautifulSoup(source, 'html5lib').find('section', id='productPage')
@@ -60,16 +62,17 @@ def scrape(source, url):
             class_="prdct__labels").find_all('li')]
     # is out of stock
     except AttributeError:
-        print("Labels missing!")
         entry['in_stock'] = False
         return entry
 
     details = soup.find(class_="prdct__details-wrap")
-    entry['description'] = details.find(id='description').text
+
+    entry['description'] = [par.text for par in
+                            details.find(id='description').find_all("p")]
 
     try:
         entry['ingredients'] = details.find(id='ingredients').text
-        if len(entry['ingredients']) > 36: # arbitrary number
+        if COSML.search(entry['description'][0] or len(entry['ingredients'] > 100)):
             entry['is_cosmetic'] = True
         else:
             entry['is_cosmetic'] = False
@@ -89,17 +92,17 @@ def get_item(url):
     result = {"url": url}
     try:
         page = requests.get(url, headers=HEADER, timeout=60)
-    except requests.ConnectionError as e:
+    except requests.ConnectionError as err:
         print("Connection Error.")
-        print(e)
+        print(err)
         return result
-    except requests.Timeout as e:
+    except requests.Timeout as err:
         print("Timeout Error.")
-        print(e)
+        print(err)
         return result
-    except requests.RequestException as e:
+    except requests.RequestException as err:
         print("General Error.")
-        print(e)
+        print(err)
         return result
 
 
