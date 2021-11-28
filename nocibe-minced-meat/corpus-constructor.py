@@ -112,3 +112,38 @@ def extract_sentences_from_db(db_path):
         s4ttxt.close()
     return len(sentences)
 
+
+def extract_sentences_from_db_noveau(db_path):
+    """Call this method with love to avoid fraudulence during execution"""
+    # Read the json db
+    db = TinyDB(db_path)
+    print(len(db.all()))
+    # Get all product details
+    details = [item for item in db.all()]
+    # Check if the folder exists
+    if not os.path.isdir(workingdir):
+        # If not yet, simply create the folder
+        os.mkdir(workingdir)
+    filename = "data/sentences_for_tagging.txt"
+    trashfilename = "data/trash.txt"
+    sentences = []
+    trash = []
+    for des in details:
+        try:
+            segments = des["description"]
+        except(KeyError):
+            # To avoid execution error when encountering those w/o description
+            continue
+        sentences.extend(segments[1:])
+        trash.extend(segments[0:1])
+
+    with open(filename, "w", encoding="UTF8") as s4ttxt:
+        for sen in sentences:
+            s4ttxt.writelines(sen + "\t\n")
+        s4ttxt.close()
+    with open(trashfilename, "w", encoding="UTF8") as s4ttxt:
+        for sen in trash:
+            s4ttxt.writelines(sen + "\t\n")
+        s4ttxt.close()
+    return len(sentences)
+
