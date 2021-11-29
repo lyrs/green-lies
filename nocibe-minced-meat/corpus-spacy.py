@@ -87,17 +87,21 @@ def load_from_txt(dir):
     return results
 
 
-# results = load_from_txt("data/sentences_for_tagging.txt")
+def custom_color_func(word, font_size, position, orientation, random_state=None,
+                    **kwargs):
+    return "rgb(30, 30, 30)"
+
 
 def create_word_cloud():
     tokens = load_from_txt("data/sentences_for_tagging.txt")
     words = []
     for token in tokens:
         words.append(token.text)
-    wc = WordCloud(max_font_size=50, max_words=100, background_color="white").generate(" ".join(words))
+    wc = WordCloud(max_font_size=50, max_words=60, background_color="white").generate(" ".join(words))
     plt.figure()
-    plt.imshow(wc, interpolation="bilinear")
+    plt.imshow(wc.recolor(color_func=custom_color_func), interpolation="bilinear")
     plt.axis("off")
+    plt.savefig('graphics/description_wordcloud.png', dpi=1200)
     plt.show()
 
 create_word_cloud()
