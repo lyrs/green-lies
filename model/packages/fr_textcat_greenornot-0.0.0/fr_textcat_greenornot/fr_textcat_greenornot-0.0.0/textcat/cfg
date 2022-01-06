@@ -1,0 +1,8 @@
+{
+  "labels":[
+    "GREEN",
+    "NOTGREEN"
+  ],
+  "threshold":0.2,
+  "positive_label":null
+}
