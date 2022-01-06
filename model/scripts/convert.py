@@ -10,7 +10,11 @@ with open(PATH) as f:
     for line in f:
         elems = line.split("\t")
         text = elems[0]
-        anno = {"cats": {"GREEN": bool(int(elems[1])), "NOTGREEN": not bool(int(elems[1]))}}
+        if elems[1] == "\n":
+            print(text)
+            anno = {"cats": {"GREEN": False, "NOTGREEN": True}}
+        else:
+            anno = {"cats": {"GREEN": bool(int(elems[1])), "NOTGREEN": not bool(int(elems[1]))}}
         doc = nlp.make_doc(text)
         doc.cats = anno['cats']
         db.add(doc)
